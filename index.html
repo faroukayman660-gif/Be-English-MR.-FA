@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>English Sessions Board</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap"
+    rel="stylesheet"
+  >
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root{
+      --board:#2B3A32;
+      --board-dark:#202A25;
+      --chalk:#F0EDE4;
+      --chalk-dim:#C7C3B8;
+      --yellow:#E8C468;
+      --pink:#D98A9C;
+      --wood:#8B6F47;
+      --wood-dark:#6B5636;
+      --radius:10px;
+    }
+
+    *{
+      box-sizing:border-box;
+    }
+
+    body{
+      margin:0;
+      background:var(--board);
+      background-image:
+        radial-gradient(
+          ellipse at top left,
+          rgba(255,255,255,.03),
+          transparent 60%
+        ),
+        radial-gradient(
+          ellipse at bottom right,
+          rgba(255,255,255,.025),
+          transparent 55%
+        );
+      color:var(--chalk);
+      font-family:'IBM Plex Sans',sans-serif;
+      min-height:100vh;
+      padding:0 0 48px;
+    }
+
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:0 24px;
+    }
+
+    header{
+      padding:44px 24px 28px;
+      text-align:center;
+      border-bottom:10px solid var(--wood);
+      box-shadow:0 6px 14px -8px rgba(0,0,0,.5);
+      margin-bottom:34px;
+      position:relative;
+    }
+
+    header::after{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:-16px;
+      height:6px;
+      background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(240,237,228,.35),
+        transparent
+      );
+      filter:blur(1px);
+    }
+
+    h1{
+      font-family:'Kalam',cursive;
+      font-weight:700;
+      font-size:2.6rem;
+      margin:0 0 6px;
+      letter-spacing:.5px;
+      text-shadow:0 0 1px rgba(240,237,228,.4);
+    }
+
+    header p{
+      font-family:'Kalam',cursive;
+      color:var(--chalk-dim);
+      font-size:1.15rem;
+      margin:0;
+    }
+
+    #totalLine{
+      margin-top:14px;
+      font-family:'IBM Plex Mono',monospace;
+      font-size:.85rem;
+      color:var(--yellow);
+      letter-spacing:.5px;
+    }
+
+    .teacher-name-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin-top:16px;
+      flex-wrap:wrap;
+    }
+
+    .teacher-name-row label{
+      font-size:.78rem;
+      color:var(--chalk-dim);
+      text-transform:uppercase;
+      letter-spacing:.5px;
+    }
+
+    #teacherNameInput{
+      font-family:'Kalam',cursive;
+      font-size:1.05rem;
+      background:rgba(240,237,228,.06);
+      color:var(--chalk);
+      border:1px solid rgba(240,237,228,.3);
+      border-radius:6px;
+      padding:6px 12px;
+      text-align:center;
+      min-width:180px;
+    }
+
+    #teacherNameInput:focus{
+      outline:2px solid var(--yellow);
+      border-color:var(--yellow);
+    }
+
+    .teacher-account{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
+      font-size:.8rem;
+      color:var(--chalk-dim);
+    }
+
+    .account-email{
+      font-family:'IBM Plex Mono',monospace;
+      color:var(--yellow);
+    }
+
+    button{
+      font-family:'IBM Plex Sans',sans-serif;
+      font-weight:600;
+      font-size:.9rem;
+      border-radius:999px;
+      border:2px solid transparent;
+      cursor:pointer;
+      transition:
+        transform .12s ease,
+        box-shadow .12s ease;
+    }
+
+    button:focus-visible{
+      outline:3px solid var(--yellow);
+      outline-offset:2px;
+    }
+
+    button:active{
+      transform:scale(.97);
+    }
+
+    .btn-primary{
+      background:var(--yellow);
+      color:var(--board-dark);
+      padding:10px 22px;
+      box-shadow:0 3px 0 var(--wood-dark);
+    }
+
+    .btn-primary:hover{
+      box-shadow:0 4px 0 var(--wood-dark);
+      transform:translateY(-1px);
+    }
+
+    .btn-ghost{
+      background:transparent;
+      color:var(--chalk);
+      border-color:rgba(240,237,228,.35);
+      padding:9px 20px;
+    }
+
+    .btn-ghost:hover{
+      border-color:var(--chalk);
+    }
+
+    .toolbar{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-bottom:32px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+      gap:16px;
+      margin-bottom:40px;
+    }
+
+    .card{
+      background:rgba(240,237,228,.04);
+      border:1.5px dashed rgba(240,237,228,.28);
+      border-radius:var(--radius);
+      padding:16px 16px 14px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-height:158px;
+    }
+
+    .card-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:6px;
+    }
+
+    .card-head-actions{
+      display:flex;
+      gap:2px;
+      flex-shrink:0;
+    }
+
+    .group-name{
+      font-family:'Kalam',cursive;
+      font-size:1.2rem;
+      font-weight:700;
+      line-height:1.15;
+      word-break:break-word;
+    }
+
+    .group-name-input{
+      font-family:'Kalam',cursive;
+      font-size:1.2rem;
+      font-weight:700;
+      background:rgba(0,0,0,.25);
+      color:var(--chalk);
+      border:1px solid var(--yellow);
+      border-radius:4px;
+      padding:2px 6px;
+      width:100%;
+    }
+
+    .icon-btn{
+      background:none;
+      border:none;
+      color:var(--chalk-dim);
+      font-size:.95rem;
+      padding:2px 4px;
+      border-radius:4px;
+    }
+
+    .icon-btn:hover{
+      color:var(--yellow);
+    }
+
+    .icon-btn-danger:hover{
+      color:var(--pink);
+    }
+
+    .tally{
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px 7px;
+      min-height:26px;
+      align-items:center;
+    }
+
+    .tally svg{
+      display:block;
+    }
+
+    .tally-empty{
+      font-size:.78rem;
+      color:rgba(240,237,228,.4);
+      font-style:italic;
+    }
+
+    .card-foot{
+      margin-top:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+
+    .count-num{
+      font-family:'IBM Plex Mono',monospace;
+      font-size:1.5rem;
+      font-weight:500;
+      color:var(--yellow);
+    }
+
+    .count-label{
+      font-size:.68rem;
+      color:var(--chalk-dim);
+      text-transform:uppercase;
+      letter-spacing:.6px;
+    }
+
+    .stamp-group{
+      display:flex;
+      gap:8px;
+      flex-shrink:0;
+    }
+
+    .stamp-btn{
+      background:transparent;
+      border:2px solid var(--yellow);
+      color:var(--yellow);
+      width:38px;
+      height:38px;
+      border-radius:50%;
+      font-size:1.3rem;
+      line-height:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+
+    .stamp-btn-minus{
+      border-color:var(--pink);
+      color:var(--pink);
+    }
+
+    .stamp-btn-minus:hover{
+      background:var(--pink);
+      color:var(--board-dark);
+    }
+
+    .stamp-btn-minus:disabled{
+      opacity:.3;
+      cursor:not-allowed;
+    }
+
+    .stamp-btn:hover{
+      background:var(--yellow);
+      color:var(--board-dark);
+    }
+
+    .date-list-wrap{
+      margin-top:6px;
+    }
+
+    .date-list{
+      list-style:none;
+      margin:0;
+      padding:0;
+      max-height:130px;
+      overflow-y:auto;
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+    }
+
+    .date-list li{
+      font-family:'IBM Plex Mono',monospace;
+      font-size:.76rem;
+      color:var(--chalk-dim);
+      padding:3px 8px;
+      background:rgba(240,237,228,.05);
+      border-radius:4px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+    }
+
+    .date-edit-btn{
+      font-size:.72rem;
+      padding:1px 4px;
+    }
+
+    .date-edit-input{
+      font-family:'IBM Plex Mono',monospace;
+      font-size:.72rem;
+      background:rgba(0,0,0,.3);
+      color:var(--chalk);
+      border:1px solid var(--yellow);
+      border-radius:4px;
+      padding:2px 4px;
+    }
+
+    .date-list-empty{
+      font-size:.76rem;
+      color:rgba(240,237,228,.4);
+      font-style:italic;
+    }
+
+    .log-section{
+      border-top:2px dashed rgba(240,237,228,.25);
+      padding-top:24px;
+      display:none;
+    }
+
+    .log-section.open{
+      display:block;
+    }
+
+    .grand-total{
+      text-align:center;
+      margin:0 0 40px;
+      padding:22px 20px;
+      border:2px solid var(--wood);
+      border-radius:var(--radius);
+      background:rgba(139,111,71,.12);
+    }
+
+    .grand-total .gt-num{
+      font-family:'IBM Plex Mono',monospace;
+      font-size:2.6rem;
+      font-weight:500;
+      color:var(--yellow);
+      line-height:1;
+    }
+
+    .grand-total .gt-label{
+      font-family:'Kalam',cursive;
+      font-size:1.05rem;
+      color:var(--chalk-dim);
+      margin-top:4px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:.88rem;
+    }
+
+    th,td{
+      text-align:left;
+      padding:9px 10px;
+      border-bottom:1px solid rgba(240,237,228,.12);
+    }
+
+    th{
+      font-weight:600;
+      color:var(--chalk-dim);
+      font-size:.72rem;
+      text-transform:uppercase;
+      letter-spacing:.5px;
+    }
+
+    td.date-cell{
+      font-family:'IBM Plex Mono',monospace;
+      color:var(--yellow);
+      white-space:nowrap;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    td.note-cell{
+      color:var(--chalk-dim);
+    }
+
+    .del-btn{
+      background:none;
+      border:none;
+      color:var(--pink);
+      font-family:'IBM Plex Mono',monospace;
+      font-size:.95rem;
+      padding:2px 8px;
+      border-radius:4px;
+    }
+
+    .del-btn:hover{
+      background:rgba(217,138,156,.15);
+    }
+
+    .empty-log{
+      text-align:center;
+      color:var(--chalk-dim);
+      font-style:italic;
+      padding:20px 0;
+    }
+
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:50;
+      padding:20px;
+    }
+
+    .modal-backdrop.open{
+      display:flex;
+    }
+
+    .modal{
+      background:var(--board-dark);
+      border:2px solid var(--wood);
+      border-radius:var(--radius);
+      padding:24px;
+      width:100%;
+      max-width:390px;
+      box-shadow:0 20px 50px rgba(0,0,0,.5);
+    }
+
+    .modal h2{
+      font-family:'Kalam',cursive;
+      margin:0 0 16px;
+      font-size:1.4rem;
+    }
+
+    .field{
+      margin-bottom:14px;
+    }
+
+    .field label{
+      display:block;
+      font-size:.75rem;
+      color:var(--chalk-dim);
+      text-transform:uppercase;
+      letter-spacing:.5px;
+      margin-bottom:5px;
+    }
+
+    .field select,
+    .field input{
+      width:100%;
+      padding:9px 10px;
+      border-radius:6px;
+      border:1px solid rgba(240,237,228,.3);
+      background:rgba(240,237,228,.06);
+      color:var(--chalk);
+      font-family:'IBM Plex Sans';
+      font-size:.9rem;
+    }
+
+    .field select:focus,
+    .field input:focus{
+      outline:2px solid var(--yellow);
+      border-color:var(--yellow);
+    }
+
+    .modal-actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top:18px;
+    }
+
+    .auth-message{
+      font-size:.82rem;
+      line-height:1.45;
+      margin:12px 0;
+      padding:10px;
+      border-radius:6px;
+      display:none;
+    }
+
+    .auth-message.show{
+      display:block;
+    }
+
+    .auth-message.error{
+      background:rgba(217,138,156,.12);
+      color:#f0b7c3;
+      border:1px solid rgba(217,138,156,.35);
+    }
+
+    .auth-message.success{
+      background:rgba(232,196,104,.10);
+      color:var(--yellow);
+      border:1px solid rgba(232,196,104,.3);
+    }
+
+    .auth-switch{
+      text-align:center;
+      margin-top:14px;
+      font-size:.8rem;
+      color:var(--chalk-dim);
+    }
+
+    .auth-switch button{
+      background:none;
+      border:none;
+      color:var(--yellow);
+      padding:0;
+      font-size:.8rem;
+    }
+
+    .loading-msg{
+      text-align:center;
+      padding:60px 20px;
+      font-family:'Kalam',cursive;
+      font-size:1.2rem;
+      color:var(--chalk-dim);
+    }
+
+    .toast{
+      position:fixed;
+      bottom:22px;
+      left:50%;
+      transform:translateX(-50%) translateY(20px);
+      background:var(--yellow);
+      color:var(--board-dark);
+      padding:10px 20px;
+      border-radius:999px;
+      font-weight:600;
+      font-size:.85rem;
+      opacity:0;
+      pointer-events:none;
+      transition:
+        opacity .25s ease,
+        transform .25s ease;
+      z-index:60;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+
+    .password-hint{
+      font-size:.72rem;
+      color:var(--chalk-dim);
+      margin-top:5px;
+    }
+
+    .busy{
+      opacity:.65;
+      pointer-events:none;
+    }
+
+    @media(max-width:600px){
+      h1{
+        font-size:2.2rem;
+      }
+      .wrap{
+        padding:0 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>English Sessions Board</h1>
+  <p>Tap the chalk stamp every time you teach an English session.</p>
+
+  <div class="teacher-name-row">
+    <label for="teacherNameInput">Teacher name:</label>
+    <input type="text" id="teacherNameInput" placeholder="Enter your name" autocomplete="off">
+  </div>
+
+  <div class="teacher-account" id="accountArea">
+    <span>Not signed in</span>
+    <button class="btn-primary" id="openAuthBtn">Create account</button>
+  </div>
+
+  <div id="totalLine"></div>
+</header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <button class="btn-primary" id="openModalBtn">+ Log a session</button>
+    <button class="btn-ghost" id="addGroupBtn">+ Add group</button>
+    <button class="btn-ghost" id="toggleLogBtn">View full log</button>
+  </div>
+
+  <div id="mainArea">
+    <div class="loading-msg">Connecting to your board…</div>
+  </div>
+
+  <div class="grand-total" id="grandTotal"></div>
+
+  <div class="log-section" id="logSection">
+    <div id="logTableWrap"></div>
+  </div>
+</div>
+
+<!-- SESSION MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h2>Log a session</h2>
+    <div class="field">
+      <label for="modalGroup">Group</label>
+      <select id="modalGroup"></select>
+    </div>
+    <div class="field">
+      <label for="modalDate">Date</label>
+      <input type="date" id="modalDate">
+    </div>
+    <div class="field">
+      <label for="modalNote">Note (optional)</label>
+      <input type="text" id="modalNote" placeholder="e.g. Unit 3, session 2">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelModalBtn">Cancel</button>
+      <button class="btn-primary" id="saveModalBtn">Save session</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-backdrop" id="authModal">
+  <div class="modal">
+    <h2 id="authTitle">Create your account</h2>
+    <div class="field">
+      <label for="authEmail">Email</label>
+      <input type="email" id="authEmail" autocomplete="email" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label for="authPassword">Password</label>
+      <input type="password" id="authPassword" autocomplete="new-password" placeholder="At least 6 characters">
+      <div class="password-hint">Use at least 6 characters.</div>
+    </div>
+    <div class="field" id="confirmField">
+      <label for="authConfirm">Confirm password</label>
+      <input type="password" id="authConfirm" autocomplete="new-password" placeholder="Repeat your password">
+    </div>
+    <div class="auth-message" id="authMessage"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="closeAuthBtn">Cancel</button>
+      <button class="btn-primary" id="authSubmitBtn">Create account</button>
+    </div>
+    <div class="auth-switch">
+      <span id="authSwitchText">Already have an account?</span>
+      <button id="authSwitchBtn">Log in</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// إعدادات السوبابيس المباشرة والثابتة التي قمت بتوفيرها مسبقاً
+const SUPABASE_URL = "https://ecylfbiajycxzdhrmsrg.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjeWxmYmlhanljeHpkaHJtc3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwMTQ3ODAsImV4cCI6MjEwMjU5MDc4MH0.MUp3dWRbDuD-Ci0ZFbAWFe9jU5IVk72G3EDJDZr2i_c";
+
+let supabaseClient = null;
+
+try{
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth:{
+      persistSession:true,
+      autoRefreshToken:true,
+      detectSessionInUrl:true
+    }
+  });
+}catch(e){
+  supabaseClient = null;
+}
+
+let data = null;
+let currentUser = null;
+let authMode = "signup";
+
+function todayStr(){
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `${year}-${month}-${day}`;
+}
+
+function defaultData(){
+  const groups = [];
+  for(let i=1;i<=20;i++){
+    groups.push({
+      id:"g"+String(i).padStart(2,"0"),
+      name:"Group "+String(i).padStart(2,"0")
+    });
+  }
+  return {
+    groups,
+    sessions:[],
+    teacherName:""
+  };
+}
+
+function escapeHtml(str){
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+function fmtDate(iso){
+  if(!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${m}/${d}/${y}`;
+}
+
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function setAuthMessage(msg, type="error"){
+  const el = document.getElementById("authMessage");
+  el.textContent = msg;
+  el.className = "auth-message show "+type;
+}
+
+function clearAuthMessage(){
+  document.getElementById("authMessage").className = "auth-message";
+}
+
+function renderAccount(){
+  const area = document.getElementById("accountArea");
+  if(currentUser){
+    const email = escapeHtml(currentUser.email || "");
+    area.innerHTML = `
+      <span>Signed in as <span class="account-email">${email}</span></span>
+      <button class="btn-ghost" id="signOutBtn">Log out</button>
+    `;
+    document.getElementById("signOutBtn").addEventListener("click", signOut);
+  }else{
+    area.innerHTML = `
+      <span>Not signed in</span>
+      <button class="btn-primary" id="openAuthBtn">Create account</button>
+    `;
+    document.getElementById("openAuthBtn").addEventListener("click", () => {
+      openAuth("signup");
+    });
+  }
+}
+
+function renderTeacherName(){
+  const input = document.getElementById("teacherNameInput");
+  if(document.activeElement !== input){
+    input.value = data?.teacherName || "";
+  }
+}
+
+function computeCounts(){
+  const map = {};
+  data.groups.forEach(g => {
+    map[g.id] = { count:0, lastDate:null };
+  });
+  data.sessions.forEach(s => {
+    if(!map[s.groupId]) return;
+    map[s.groupId].count++;
+    if(!map[s.groupId].lastDate || s.date > map[s.groupId].lastDate){
+      map[s.groupId].lastDate = s.date;
+    }
+  });
+  return map;
+}
+
+function tallyMarkSVG(){
+  return `<svg width="20" height="24" viewBox="0 0 20 24" fill="none"><path d="M4 3 L4 21" stroke="#F0EDE4" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
+function tallyGroupOfFiveSVG(){
+  return `<svg width="34" height="24" viewBox="0 0 34 24" fill="none"><path d="M3 3 L2 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/><path d="M11 3 L10 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/><path d="M19 3 L18 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/><path d="M27 3 L26 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/><path d="M0 20 L30 4" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/></svg>`;
+}
+
+function renderTally(count){
+  if(count === 0) return `<span class="tally-empty">No sessions yet</span>`;
+  let html = "";
+  for(let i=0; i<Math.floor(count/5); i++){
+    html += tallyGroupOfFiveSVG();
+  }
+  for(let i=0; i<count%5; i++){
+    html += tallyMarkSVG();
+  }
+  return html;
+}
+
+function datesForGroup(groupId){
+  return data.sessions.filter(s => s.groupId === groupId).sort((a,b) => b.date.localeCompare(a.date));
+}
+
+function renderGroups(){
+  const counts = computeCounts();
+  const area = document.getElementById("mainArea");
+  let html = '<div class="grid">';
+
+  data.groups.forEach(g => {
+    const c = counts[g.id] || { count:0, lastDate:null };
+    const sessionsForGroup = datesForGroup(g.id);
+
+    const datesHtml = sessionsForGroup.length ? `
+      <ul class="date-list">
+        ${sessionsForGroup.map(s => `
+          <li data-session-id="${s.id}">
+            <span class="date-display">${fmtDate(s.date)}</span>
+            <input type="date" class="date-edit-input" value="${s.date}" style="display:none">
+            <button class="icon-btn date-edit-btn" data-action="edit-date" title="Edit this date">✏️</button>
+            <button class="icon-btn icon-btn-danger date-edit-btn" data-action="delete-single" title="Delete session">✕</button>
+          </li>
+        `).join("")}
+      </ul>
+    ` : `<div class="date-list-empty">No dates logged yet</div>`;
+
+    html += `
+      <div class="card" data-group-id="${g.id}">
+        <div class="card-head">
+          <div class="group-name" data-group-id="${g.id}" title="Click to rename">${escapeHtml(g.name)}</div>
+          <div class="card-head-actions">
+            <button class="icon-btn" data-action="edit-name" title="Rename group">✏️</button>
+            <button class="icon-btn icon-btn-danger" data-action="delete-group" title="Delete group">✕</button>
+          </div>
+        </div>
+        <div class="tally">${renderTally(c.count)}</div>
+        <div class="date-list-wrap">${datesHtml}</div>
+        <div class="card-foot">
+          <div>
+            <div class="count-label">Sessions</div>
+            <div class="count-num">${c.count}</div>
+          </div>
+          <div class="stamp-group">
+            <button class="stamp-btn stamp-btn-minus" data-action="stamp-minus" data-group-id="${g.id}" title="Remove last session" ${c.count === 0 ? "disabled" : ""}>−</button>
+            <button class="stamp-btn" data-action="stamp-plus" data-group-id="${g.id}" title="Stamp session for today">✓</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += "</div>";
+  area.innerHTML = html;
+}
+
+function renderGrandTotal(){
+  const total = data.sessions.length;
+  document.getElementById("totalLine").textContent = `Total sessions taught across all groups: ${total}`;
+  document.getElementById("grandTotal").innerHTML = `
+    <div class="gt-num">${total}</div>
+    <div class="gt-label">Total English Sessions Taught</div>
+  `;
+}
+
+function renderLogTable(){
+  const wrap = document.getElementById("logTableWrap");
+  if(!data.sessions.length){
+    wrap.innerHTML = `<div class="empty-log">No sessions logged yet.</div>`;
+    return;
+  }
+  const groupMap = {};
+  data.groups.forEach(g => { groupMap[g.id] = g.name; });
+  const sorted = [...data.sessions].sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+  let html = `<table><thead><tr><th>Date</th><th>Group</th><th>Note</th><th style="text-align:right">Action</th></tr></thead><tbody>`;
+  sorted.forEach(s => {
+    const gName = groupMap[s.groupId] || "Unknown group";
+    html += `
+      <tr>
+        <td class="date-cell">${fmtDate(s.date)}</td>
+        <td>${escapeHtml(gName)}</td>
+        <td class="note-cell">${escapeHtml(s.note || "—")}</td>
+        <td style="text-align:right"><button class="del-btn" data-action="delete-log-item" data-session-id="${s.id}">Delete</button></td>
+      </tr>
+    `;
+  });
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
+}
+
+function render(){
+  if(!data) return;
+  renderAccount();
+  renderTeacherName();
+  renderGroups();
+  renderGrandTotal();
+  renderLogTable();
+}
+
+let saveTimeout = null;
+
+async function saveData(){
+  if(!data) return;
+  if(!supabaseClient || !currentUser){
+    try{
+      localStorage.setItem("english_sessions_local_data", JSON.stringify(data));
+    }catch(e){}
+    return;
+  }
+
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    try{
+      const payload = {
+        user_id: currentUser.id,
+        groups: data.groups,
+        sessions: data.sessions,
+        teacher_name: data.teacherName || "",
+        updated_at: new Date().toISOString()
+      };
+      await supabaseClient.from("user_boards").upsert(payload, { onConflict:"user_id" });
+    }catch(e){}
+  }, 600);
+}
+
+async function loadData(){
+  if(!supabaseClient || !currentUser){
+    try{
+      const saved = localStorage.getItem("english_sessions_local_data");
+      if(saved){
+        data = JSON.parse(saved);
+        if(!data.teacherName) data.teacherName = "";
+        render();
+        return;
+      }
+    }catch(e){}
+    data = defaultData();
+    render();
+    return;
+  }
+
+  try{
+    const { data:rows, error } = await supabaseClient
+      .from("user_boards")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if(rows){
+      data = {
+        groups: rows.groups || defaultData().groups,
+        sessions: rows.sessions || [],
+        teacher_name: rows.teacher_name || ""
+      };
+      data.teacherName = rows.teacher_name || "";
+    }else{
+      data = defaultData();
+      await saveData();
+    }
+    render();
+  }catch(e){
+    data = defaultData();
+    render();
+  }
+}
+
+function openAuth(mode="signup"){
+  authMode = mode;
+  clearAuthMessage();
+  document.getElementById("authEmail").value = "";
+  document.getElementById("authPassword").value = "";
+  document.getElementById("authConfirm").value = "";
+
+  const title = document.getElementById("authTitle");
+  const submitBtn = document.getElementById("authSubmitBtn");
+  const confirmField = document.getElementById("confirmField");
+  const switchText = document.getElementById("authSwitchText");
+  const switchBtn = document.getElementById("authSwitchBtn");
+
+  if(authMode === "signup"){
+    title.textContent = "Create your account";
+    submitBtn.textContent = "Create account";
+    confirmField.style.display = "block";
+    switchText.textContent = "Already have an account?";
+    switchBtn.textContent = "Log in";
+  }else{
+    title.textContent = "Log in to your account";
+    submitBtn.textContent = "Log in";
+    confirmField.style.display = "none";
+    switchText.textContent = "Don't have an account?";
+    switchBtn.textContent = "Create account";
+  }
+  document.getElementById("authModal").classList.add("open");
+}
+
+function closeAuth(){
+  document.getElementById("authModal").classList.remove("open");
+}
+
+async function handleAuthSubmit(){
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  const confirm = document.getElementById("authConfirm").value;
+
+  clearAuthMessage();
+
+  if(!email){
+    setAuthMessage("Please enter your email address.");
+    return;
+  }
+  if(!password || password.length < 6){
+    setAuthMessage("Password must be at least 6 characters long.");
+    return;
+  }
+  if(authMode === "signup" && password !== confirm){
+    setAuthMessage("Passwords do not match.");
+    return;
+  }
+
+  const button = document.getElementById("authSubmitBtn");
+  button.disabled = true;
+  button.classList.add("busy");
+
+  try{
+    if(authMode === "signup"){
+      const { data:authData, error } = await supabaseClient.auth.signUp({ email, password });
+      if(error){
+        setAuthMessage(error.message);
+        return;
+      }
+      if(authData?.session){
+        currentUser = authData.session.user;
+        closeAuth();
+        showToast("Account created successfully");
+        await loadData();
+      }else{
+        setAuthMessage("Check your email for the confirmation link.", "success");
+      }
+    }else{
+      const { data:authData, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if(error){
+        setAuthMessage(error.message);
+        return;
+      }
+      currentUser = authData.session.user;
+      closeAuth();
+      showToast("Logged in successfully");
+      await loadData();
+    }
+  }catch(e){
+    setAuthMessage(e.message || "An error occurred");
+  }finally{
+    button.disabled = false;
+    button.classList.remove("busy");
+  }
+}
+
+async function signOut(){
+  if(!supabaseClient) return;
+  try{
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    data = defaultData();
+    render();
+    showToast("Logged out successfully");
+  }catch(e){}
+}
+
+function setupAuthStateListener(){
+  if(!supabaseClient) return;
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    currentUser = session?.user || null;
+    if(currentUser){
+      await loadData();
+    }else{
+      data = defaultData();
+      render();
+    }
+  });
+}
+
+function openModal(){
+  const select = document.getElementById("modalGroup");
+  select.innerHTML = data.groups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join("");
+  document.getElementById("modalDate").value = todayStr();
+  document.getElementById("modalNote").value = "";
+  document.getElementById("modalBackdrop").classList.add("open");
+}
+
+function closeModal(){
+  document.getElementById("modalBackdrop").classList.remove("open");
+}
+
+function saveModalSession(){
+  const groupId = document.getElementById("modalGroup").value;
+  const date = document.getElementById("modalDate").value;
+  const note = document.getElementById("modalNote").value.trim();
+
+  if(!groupId || !date) return;
+
+  const newSession = {
+    id: "s_" + Date.now() + "_" + Math.random().toString(36).substr(2,4),
+    groupId,
+    date,
+    note
+  };
+
+  data.sessions.push(newSession);
+  saveData();
+  render();
+  closeModal();
+  showToast("Session logged successfully");
+}
+
+function initListeners(){
+  document.getElementById("teacherNameInput").addEventListener("input", e => {
+    if(!data) return;
+    data.teacherName = e.target.value;
+    saveData();
+  });
+
+  document.getElementById("openModalBtn").addEventListener("click", openModal);
+  
+  document.getElementById("addGroupBtn").addEventListener("click", () => {
+    const num = data.groups.length + 1;
+    data.groups.push({ id: "g_" + Date.now(), name: "Group " + String(num).padStart(2,"0") });
+    saveData();
+    render();
+    showToast("Group added");
+  });
+
+  const toggleLogBtn = document.getElementById("toggleLogBtn");
+  const logSection = document.getElementById("logSection");
+  toggleLogBtn.addEventListener("click", () => {
+    logSection.classList.toggle("open");
+    toggleLogBtn.textContent = logSection.classList.contains("open") ? "Hide full log" : "View full log";
+  });
+
+  document.getElementById("cancelModalBtn").addEventListener("click", closeModal);
+  document.getElementById("saveModalBtn").addEventListener("click", saveModalSession);
+  document.getElementById("modalBackdrop").addEventListener("click", e => {
+    if(e.target === document.getElementById("modalBackdrop")) closeModal();
+  });
+
+  document.getElementById("closeAuthBtn").addEventListener("click", closeAuth);
+  document.getElementById("authSubmitBtn").addEventListener("click", handleAuthSubmit);
+  document.getElementById("authSwitchBtn").addEventListener("click", () => {
+    openAuth(authMode === "signup" ? "login" : "signup");
+  });
+  document.getElementById("authModal").addEventListener("click", e => {
+    if(e.target === document.getElementById("authModal")) closeAuth();
+  });
+
+  document.getElementById("mainArea").addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if(!btn) return;
+    const action = btn.getAttribute("data-action");
+
+    if(btn.classList.contains("stamp-btn") && !btn.classList.contains("stamp-btn-minus")){
+      const groupId = btn.getAttribute("data-group-id");
+      if(!groupId) return;
+      data.sessions.push({
+        id: "s_" + Date.now() + "_" + Math.random().toString(36).substr(2,4),
+        groupId,
+        date: todayStr(),
+        note: ""
+      });
+      saveData();
+      render();
+      showToast("Session stamped!");
+      return;
+    }
+
+    if(btn.classList.contains("stamp-btn-minus")){
+      const groupId = btn.getAttribute("data-group-id");
+      if(!groupId) return;
+      const groupSessions = datesForGroup(groupId);
+      if(!groupSessions.length) return;
+      const latest = groupSessions[0];
+      data.sessions = data.sessions.filter(s => s.id !== latest.id);
+      saveData();
+      render();
+      showToast("Removed last session");
+      return;
+    }
+
+    if(action === "edit-name"){
+      const card = btn.closest(".card");
+      const nameEl = card.querySelector(".group-name");
+      const groupId = card.getAttribute("data-group-id");
+      const groupObj = data.groups.find(g => g.id === groupId);
+      if(!groupObj) return;
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "group-name-input";
+      input.value = groupObj.name;
+      nameEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const commit = () => {
+        const val = input.value.trim();
+        if(val){
+          groupObj.name = val;
+          saveData();
+        }
+        render();
+      };
+      input.addEventListener("blur", commit);
+      input.addEventListener("keydown", ev => { if(ev.key === "Enter") commit(); });
+      return;
+    }
+
+    if(action === "delete-group"){
+      const card = btn.closest(".card");
+      const groupId = card.getAttribute("data-group-id");
+      if(!confirm("Delete this group and all its logged sessions?")) return;
+      data.groups = data.groups.filter(g => g.id !== groupId);
+      data.sessions = data.sessions.filter(s => s.groupId !== groupId);
+      saveData();
+      render();
+      showToast("Group deleted");
+      return;
+    }
+
+    if(action === "edit-date"){
+      const li = btn.closest("li");
+      const display = li.querySelector(".date-display");
+      const input = li.querySelector(".date-edit-input");
+      const sessionId = li.getAttribute("data-session-id");
+
+      display.style.display = "none";
+      input.style.display = "block";
+      input.focus();
+
+      const commit = () => {
+        const val = input.value;
+        if(val){
+          const sObj = data.sessions.find(s => s.id === sessionId);
+          if(sObj){
+            sObj.date = val;
+            saveData();
+          }
+        }
+        render();
+      };
+      input.addEventListener("blur", commit);
+      input.addEventListener("keydown", ev => { if(ev.key === "Enter") commit(); });
+      return;
+    }
+
+    if(action === "delete-single"){
+      const li = btn.closest("li");
+      const sessionId = li.getAttribute("data-session-id");
+      data.sessions = data.sessions.filter(s => s.id !== sessionId);
+      saveData();
+      render();
+      showToast("Session deleted");
+      return;
+    }
+  });
+
+  document.getElementById("logSection").addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if(!btn) return;
+    if(btn.getAttribute("data-action") === "delete-log-item"){
+      const sessionId = btn.getAttribute("data-session-id");
+      data.sessions = data.sessions.filter(s => s.id !== sessionId);
+      saveData();
+      render();
+      showToast("Session deleted");
+    }
+  });
+}
+
+async function initApp(){
+  initListeners();
+  if(!supabaseClient){
+    data = defaultData();
+    render();
+    return;
+  }
+
+  try{
+    const { data:sessionData, error } = await supabaseClient.auth.getSession();
+    if(error){
+      data = defaultData();
+      render();
+      return;
+    }
+    currentUser = sessionData?.session?.user || null;
+    if(currentUser){
+      await loadData();
+    }else{
+      data = defaultData();
+      render();
+    }
+    setupAuthStateListener();
+  }catch(e){
+    data = defaultData();
+    render();
+  }
+}
+
+initApp();
+</script>
+
+</body>
+</html>
