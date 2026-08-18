@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Sessions Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:#2B3A32;
+    --board-dark:#202A25;
+    --chalk:#F0EDE4;
+    --chalk-dim:#C7C3B8;
+    --yellow:#E8C468;
+    --pink:#D98A9C;
+    --wood:#8B6F47;
+    --wood-dark:#6B5636;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--board);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.03), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(255,255,255,0.025), transparent 55%);
+    color:var(--chalk);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding:0 0 48px 0;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:0 24px;}
+
+  /* Header - chalk-scrawled title on the board */
+  header{
+    padding:44px 24px 28px 24px;
+    text-align:center;
+    border-bottom:10px solid var(--wood);
+    box-shadow:0 6px 14px -8px rgba(0,0,0,0.5);
+    margin-bottom:34px;
+    position:relative;
+  }
+  header::after{
+    content:"";
+    position:absolute;
+    left:0;right:0;bottom:-16px;
+    height:6px;
+    background:linear-gradient(90deg, transparent, rgba(240,237,228,0.35), transparent);
+    filter:blur(1px);
+  }
+  h1{
+    font-family:'Kalam', cursive;
+    font-weight:700;
+    font-size:2.6rem;
+    margin:0 0 6px 0;
+    letter-spacing:0.5px;
+    text-shadow:0 0 1px rgba(240,237,228,0.4);
+  }
+  header p{
+    font-family:'Kalam', cursive;
+    color:var(--chalk-dim);
+    font-size:1.15rem;
+    margin:0;
+  }
+  #totalLine{
+    margin-top:14px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.85rem;
+    color:var(--yellow);
+    letter-spacing:0.5px;
+  }
+
+  /* Toolbar */
+  .toolbar{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-bottom:32px;
+  }
+  button{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:0.9rem;
+    border-radius:999px;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  button:focus-visible{outline:3px solid var(--yellow); outline-offset:2px;}
+  button:active{transform:scale(0.97);}
+  .btn-primary{
+    background:var(--yellow);
+    color:var(--board-dark);
+    padding:10px 22px;
+    box-shadow:0 3px 0 var(--wood-dark);
+  }
+  .btn-primary:hover{box-shadow:0 4px 0 var(--wood-dark); transform:translateY(-1px);}
+  .btn-ghost{
+    background:transparent;
+    color:var(--chalk);
+    border-color:rgba(240,237,228,0.35);
+    padding:9px 20px;
+  }
+  .btn-ghost:hover{border-color:var(--chalk);}
+
+  /* Group grid */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(210px, 1fr));
+    gap:16px;
+    margin-bottom:40px;
+  }
+  .card{
+    background:rgba(240,237,228,0.04);
+    border:1.5px dashed rgba(240,237,228,0.28);
+    border-radius:var(--radius);
+    padding:16px 16px 14px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-height:158px;
+  }
+  .card-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:6px;
+  }
+  .card-head-actions{
+    display:flex;
+    gap:2px;
+    flex-shrink:0;
+  }
+  .group-name{
+    font-family:'Kalam', cursive;
+    font-size:1.2rem;
+    font-weight:700;
+    line-height:1.15;
+    word-break:break-word;
+  }
+  .group-name-input{
+    font-family:'Kalam', cursive;
+    font-size:1.2rem;
+    font-weight:700;
+    background:rgba(0,0,0,0.25);
+    color:var(--chalk);
+    border:1px solid var(--yellow);
+    border-radius:4px;
+    padding:2px 6px;
+    width:100%;
+  }
+  .icon-btn{
+    background:none;
+    border:none;
+    color:var(--chalk-dim);
+    font-size:0.95rem;
+    padding:2px 4px;
+    border-radius:4px;
+    flex-shrink:0;
+  }
+  .icon-btn:hover{color:var(--yellow);}
+  .icon-btn-danger:hover{color:var(--pink);}
+
+  .tally{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px 7px;
+    min-height:26px;
+    align-items:center;
+  }
+  .tally svg{display:block;}
+  .tally-empty{
+    font-family:'IBM Plex Sans';
+    font-size:0.78rem;
+    color:rgba(240,237,228,0.4);
+    font-style:italic;
+  }
+
+  .card-foot{
+    margin-top:auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .count-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1.5rem;
+    font-weight:500;
+    color:var(--yellow);
+  }
+  .count-label{
+    font-size:0.68rem;
+    color:var(--chalk-dim);
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+  }
+  .last-date{
+    font-size:0.72rem;
+    color:var(--chalk-dim);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .stamp-group{
+    display:flex;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .stamp-btn{
+    background:transparent;
+    border:2px solid var(--yellow);
+    color:var(--yellow);
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    font-size:1.3rem;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .stamp-btn-minus{
+    border-color:var(--pink);
+    color:var(--pink);
+  }
+  .stamp-btn-minus:hover{background:var(--pink); color:var(--board-dark);}
+  .stamp-btn-minus:disabled{
+    opacity:0.3;
+    cursor:not-allowed;
+  }
+  .stamp-btn-minus:disabled:hover{background:transparent; color:var(--pink);}
+  .count-btn{
+    background:none;
+    border:none;
+    text-align:left;
+    padding:0;
+    cursor:pointer;
+    border-radius:6px;
+  }
+  .count-btn:hover .count-num{color:#f3d585;}
+  .count-btn:focus-visible{outline:2px solid var(--yellow); outline-offset:3px;}
+  .date-list-wrap{margin-top:6px;}
+  .date-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    max-height:130px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .date-list li{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.76rem;
+    color:var(--chalk-dim);
+    padding:3px 8px;
+    background:rgba(240,237,228,0.05);
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:6px;
+  }
+  .date-edit-btn{
+    font-size:0.72rem;
+    padding:1px 4px;
+    flex-shrink:0;
+  }
+  .date-edit-input{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    background:rgba(0,0,0,0.3);
+    color:var(--chalk);
+    border:1px solid var(--yellow);
+    border-radius:4px;
+    padding:2px 4px;
+  }
+  .date-list-empty{
+    font-size:0.76rem;
+    color:rgba(240,237,228,0.4);
+    font-style:italic;
+  }
+  .stamp-btn:hover{background:var(--yellow); color:var(--board-dark);}
+  .stamp-btn.just-stamped{animation:stampPulse 0.4s ease;}
+  @keyframes stampPulse{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.25) rotate(-8deg);}
+    100%{transform:scale(1);}
+  }
+
+  /* Log section */
+  .log-section{
+    border-top:2px dashed rgba(240,237,228,0.25);
+    padding-top:24px;
+    display:none;
+  }
+  .log-section.open{display:block;}
+  .grand-total{
+    text-align:center;
+    margin:0 0 40px 0;
+    padding:22px 20px;
+    border:2px solid var(--wood);
+    border-radius:var(--radius);
+    background:rgba(139,111,71,0.12);
+  }
+  .grand-total .gt-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:2.6rem;
+    font-weight:500;
+    color:var(--yellow);
+    line-height:1;
+  }
+  .grand-total .gt-label{
+    font-family:'Kalam', cursive;
+    font-size:1.05rem;
+    color:var(--chalk-dim);
+    margin-top:4px;
+  }
+  .log-toggle-row{
+    display:flex;
+    justify-content:center;
+    margin-bottom:16px;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.88rem;
+  }
+  th,td{
+    text-align:left;
+    padding:9px 10px;
+    border-bottom:1px solid rgba(240,237,228,0.12);
+  }
+  th{
+    font-family:'IBM Plex Sans';
+    font-weight:600;
+    color:var(--chalk-dim);
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  td.date-cell{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--yellow);
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  td.note-cell{color:var(--chalk-dim);}
+  .del-btn{
+    background:none;
+    border:none;
+    color:var(--pink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.95rem;
+    padding:2px 8px;
+    border-radius:4px;
+  }
+  .del-btn:hover{background:rgba(217,138,156,0.15);}
+  .empty-log{
+    text-align:center;
+    color:var(--chalk-dim);
+    font-style:italic;
+    padding:20px 0;
+  }
+
+  /* Modal */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--board-dark);
+    border:2px solid var(--wood);
+    border-radius:var(--radius);
+    padding:24px;
+    width:100%;
+    max-width:360px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  }
+  .modal h2{
+    font-family:'Kalam', cursive;
+    margin:0 0 16px 0;
+    font-size:1.4rem;
+  }
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:0.75rem;
+    color:var(--chalk-dim);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-bottom:5px;
+  }
+  .field select, .field input{
+    width:100%;
+    padding:9px 10px;
+    border-radius:6px;
+    border:1px solid rgba(240,237,228,0.3);
+    background:rgba(240,237,228,0.06);
+    color:var(--chalk);
+    font-family:'IBM Plex Sans';
+    font-size:0.9rem;
+  }
+  .field select:focus, .field input:focus{outline:2px solid var(--yellow); border-color:var(--yellow);}
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    margin-top:18px;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--yellow);
+    color:var(--board-dark);
+    padding:10px 20px;
+    border-radius:999px;
+    font-weight:600;
+    font-size:0.85rem;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+    z-index:60;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .loading-msg{
+    text-align:center;
+    padding:60px 20px;
+    font-family:'Kalam', cursive;
+    font-size:1.2rem;
+    color:var(--chalk-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>BE English Sessions Board</h1>
+<p> BY Mr.FA </p>
+  <p>Tap the chalk stamp every time you teach an English session.</p>
+  <div id="totalLine"></div>
+</header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <button class="btn-primary" id="openModalBtn">+ Log a session</button>
+    <button class="btn-ghost" id="addGroupBtn">+ Add group</button>
+    <button class="btn-ghost" id="toggleLogBtn">View full log</button>
+  </div>
+
+  <div id="mainArea">
+    <div class="loading-msg">Chalking up the board…</div>
+  </div>
+
+  <div class="grand-total" id="grandTotal"></div>
+
+  <div class="log-section" id="logSection">
+    <div id="logTableWrap"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h2>Log a session</h2>
+    <div class="field">
+      <label for="modalGroup">Group</label>
+      <select id="modalGroup"></select>
+    </div>
+    <div class="field">
+      <label for="modalDate">Date</label>
+      <input type="date" id="modalDate">
+    </div>
+    <div class="field">
+      <label for="modalNote">Note (optional)</label>
+      <input type="text" id="modalNote" placeholder="e.g. Unit 3, session 2">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelModalBtn">Cancel</button>
+      <button class="btn-primary" id="saveModalBtn">Save session</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let data = null; // { groups: [{id,name}], sessions: [{id,groupId,date,note}] }
+const STORAGE_KEY = 'tally-data';
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function defaultData(){
+  const groups = [];
+  for(let i=1;i<=20;i++){
+    groups.push({ id: 'g'+String(i).padStart(2,'0'), name: 'Group '+String(i).padStart(2,'0') });
+  }
+  return { groups, sessions: [] };
+}
+
+const hasCloudStorage = typeof window.storage !== 'undefined' && typeof window.storage.get === 'function';
+
+async function loadData(){
+  try{
+    if(hasCloudStorage){
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        data = JSON.parse(res.value);
+      }
+    } else {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) data = JSON.parse(raw);
+    }
+    if(!data){
+      data = defaultData();
+    } else {
+      // guard against malformed/partial data
+      if(!Array.isArray(data.groups) || data.groups.length === 0) data.groups = defaultData().groups;
+      if(!Array.isArray(data.sessions)) data.sessions = [];
+    }
+  }catch(err){
+    data = defaultData();
+  }
+  render();
+}
+
+async function saveData(){
+  try{
+    if(hasCloudStorage){
+      await window.storage.set(STORAGE_KEY, JSON.stringify(data), false);
+    } else {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+  }catch(err){
+    showToast("Couldn't save — check connection");
+  }
+}
+
+function computeCounts(){
+  const map = {};
+  data.groups.forEach(g => map[g.id] = { count:0, lastDate:null });
+  data.sessions.forEach(s => {
+    if(!map[s.groupId]) return;
+    map[s.groupId].count++;
+    if(!map[s.groupId].lastDate || s.date > map[s.groupId].lastDate){
+      map[s.groupId].lastDate = s.date;
+    }
+  });
+  return map;
+}
+
+function tallyMarkSVG(){
+  return '<svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<path d="M4 3 L4 21" stroke="#F0EDE4" stroke-width="2" stroke-linecap="round"/>'
+    + '</svg>';
+}
+function tallyGroupOfFiveSVG(){
+  // 4 verticals + 1 diagonal slash, hand-drawn feel via slight rotation
+  return '<svg width="34" height="24" viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+    + '<path d="M3 3 L2 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/>'
+    + '<path d="M11 3 L10 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/>'
+    + '<path d="M19 3 L18 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/>'
+    + '<path d="M27 3 L26 21" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/>'
+    + '<path d="M0 20 L30 4" stroke="#E8C468" stroke-width="2" stroke-linecap="round"/>'
+    + '</svg>';
+}
+
+function renderTally(count){
+  if(count === 0) return '<span class="tally-empty">No sessions yet</span>';
+  const fives = Math.floor(count/5);
+  const rem = count % 5;
+  let html = '';
+  for(let i=0;i<fives;i++) html += tallyGroupOfFiveSVG();
+  for(let i=0;i<rem;i++) html += tallyMarkSVG();
+  return html;
+}
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  return m+'/'+d+'/'+y;
+}
+
+function render(){
+  renderGroups();
+  renderLog();
+  renderTotal();
+  populateModalGroupSelect();
+}
+
+function renderTotal(){
+  const total = data.sessions.length;
+  document.getElementById('totalLine').textContent =
+    total === 0 ? 'No sessions logged yet' : total + ' session' + (total===1?'':'s') + ' logged across ' + data.groups.length + ' groups';
+
+  const gt = document.getElementById('grandTotal');
+  gt.innerHTML = '<div class="gt-num">'+total+'</div>'
+    + '<div class="gt-label">total session'+(total===1?'':'s')+' taught, all groups combined</div>';
+}
+
+function datesForGroup(groupId){
+  return data.sessions
+    .filter(s => s.groupId === groupId)
+    .sort((a,b) => b.date.localeCompare(a.date));
+}
+
+function renderGroups(){
+  const counts = computeCounts();
+  const area = document.getElementById('mainArea');
+  let html = '<div class="grid">';
+  data.groups.forEach(g => {
+    const c = counts[g.id] || {count:0,lastDate:null};
+    const sessionsForGroup = datesForGroup(g.id);
+    const datesHtml = sessionsForGroup.length
+      ? '<ul class="date-list">' + sessionsForGroup.map(s =>
+          '<li data-session-id="'+s.id+'">'
+          + '<span class="date-display" data-role="date-display">'+fmtDate(s.date)+'</span>'
+          + '<input type="date" class="date-edit-input" data-role="date-input" value="'+s.date+'" style="display:none;">'
+          + '<button class="icon-btn date-edit-btn" data-action="edit-date" title="Edit this date">✎</button>'
+        + '</li>').join('') + '</ul>'
+      : '<div class="date-list-empty">No sessions yet</div>';
+    html += '<div class="card" data-group="'+g.id+'">'
+      + '<div class="card-head">'
+      +   '<span class="group-name" data-role="name">'+escapeHtml(g.name)+'</span>'
+      +   '<div class="card-head-actions">'
+      +     '<button class="icon-btn" data-action="rename" title="Rename group">✎</button>'
+      +     '<button class="icon-btn icon-btn-danger" data-action="delete-group" title="Delete this group">🗑</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="tally">'+renderTally(c.count)+'</div>'
+      + '<div class="card-foot">'
+      +   '<button class="count-btn" data-action="toggle-dates" title="Show every session date for this group">'
+      +     '<div class="count-num">'+c.count+'</div>'
+      +     '<div class="count-label">sessions ▾</div>'
+      +   '</button>'
+      +   '<div class="stamp-group">'
+      +     '<button class="stamp-btn stamp-btn-minus" data-action="unstamp" title="Remove the most recent session" '+(c.count===0?'disabled':'')+'>−</button>'
+      +     '<button class="stamp-btn" data-action="stamp" title="Log a session today">+</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="last-date">'+(c.lastDate ? 'Last: '+fmtDate(c.lastDate) : 'Not started')+'</div>'
+      + '<div class="date-list-wrap" data-role="dates" style="display:none;">'+datesHtml+'</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  area.innerHTML = html;
+
+  area.querySelectorAll('[data-action="stamp"]').forEach(btn => {
+    btn.addEventListener('click', onStampClick);
+  });
+  area.querySelectorAll('[data-action="unstamp"]').forEach(btn => {
+    btn.addEventListener('click', onUnstampClick);
+  });
+  area.querySelectorAll('[data-action="rename"]').forEach(btn => {
+    btn.addEventListener('click', onRenameClick);
+  });
+  area.querySelectorAll('[data-action="delete-group"]').forEach(btn => {
+    btn.addEventListener('click', onDeleteGroupClick);
+  });
+  area.querySelectorAll('[data-action="toggle-dates"]').forEach(btn => {
+    btn.addEventListener('click', onToggleDatesClick);
+  });
+  area.querySelectorAll('[data-action="edit-date"]').forEach(btn => {
+    btn.addEventListener('click', onEditDateClick);
+  });
+}
+
+async function onUnstampClick(e){
+  const card = e.target.closest('.card');
+  const groupId = card.dataset.group;
+  const sessionsForGroup = datesForGroup(groupId);
+  if(sessionsForGroup.length === 0) return;
+  const mostRecent = sessionsForGroup[0]; // already sorted newest first
+  const gName = (data.groups.find(g=>g.id===groupId)||{}).name || 'this group';
+  if(!confirm('Remove the most recent session for '+gName+' ('+fmtDate(mostRecent.date)+')?')) return;
+  data.sessions = data.sessions.filter(s => s.id !== mostRecent.id);
+  await saveData();
+  render();
+  showToast('Removed session for '+gName);
+}
+
+function onEditDateClick(e){
+  const li = e.target.closest('li');
+  const sessionId = li.dataset.sessionId;
+  const display = li.querySelector('[data-role="date-display"]');
+  const input = li.querySelector('[data-role="date-input"]');
+  display.style.display = 'none';
+  e.target.style.display = 'none';
+  input.style.display = 'inline-block';
+  input.focus();
+
+  const commit = async () => {
+    const newDate = input.value;
+    if(newDate){
+      const s = data.sessions.find(s => s.id === sessionId);
+      if(s) s.date = newDate;
+      await saveData();
+    }
+    render();
+  };
+  input.addEventListener('change', commit, { once:true });
+  input.addEventListener('blur', () => {
+    // if user clicked away without changing, just restore the view
+    if(input.style.display !== 'none'){
+      display.style.display = '';
+      e.target.style.display = '';
+      input.style.display = 'none';
+    }
+  }, { once:true });
+}
+
+function onToggleDatesClick(e){
+  const card = e.target.closest('.card');
+  const wrap = card.querySelector('[data-role="dates"]');
+  const btn = card.querySelector('[data-action="toggle-dates"] .count-label');
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  if(btn) btn.textContent = isOpen ? 'sessions ▾' : 'sessions ▴';
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function onDeleteGroupClick(e){
+  const card = e.target.closest('.card');
+  const groupId = card.dataset.group;
+  const g = data.groups.find(g => g.id === groupId);
+  if(!g) return;
+  const sessionCount = data.sessions.filter(s => s.groupId === groupId).length;
+  const warning = sessionCount > 0
+    ? 'Delete "'+g.name+'"? This also permanently deletes its '+sessionCount+' logged session'+(sessionCount===1?'':'s')+'.'
+    : 'Delete "'+g.name+'"?';
+  if(!confirm(warning)) return;
+  data.groups = data.groups.filter(gr => gr.id !== groupId);
+  data.sessions = data.sessions.filter(s => s.groupId !== groupId);
+  await saveData();
+  render();
+  showToast('Deleted '+g.name);
+}
+
+async function onAddGroupClick(){
+  const name = prompt('Name for the new group:', '');
+  if(name === null) return;
+  const trimmed = name.trim();
+  if(!trimmed){
+    showToast("Group needs a name");
+    return;
+  }
+  const newId = 'g'+Date.now()+Math.floor(Math.random()*1000);
+  data.groups.push({ id: newId, name: trimmed });
+  await saveData();
+  render();
+  showToast('Added '+trimmed);
+}
+
+async function onStampClick(e){
+  const card = e.target.closest('.card');
+  const groupId = card.dataset.group;
+  const newSession = { id: 's'+Date.now()+Math.floor(Math.random()*1000), groupId, date: todayStr(), note: '' };
+  data.sessions.push(newSession);
+  e.target.classList.add('just-stamped');
+  setTimeout(()=>e.target.classList.remove('just-stamped'), 400);
+  await saveData();
+  render();
+  const gName = (data.groups.find(g=>g.id===groupId)||{}).name || 'Group';
+  showToast('Logged today for '+gName);
+}
+
+function onRenameClick(e){
+  const card = e.target.closest('.card');
+  const groupId = card.dataset.group;
+  const nameSpan = card.querySelector('[data-role="name"]');
+  const currentName = (data.groups.find(g=>g.id===groupId)||{}).name || '';
+  const input = document.createElement('input');
+  input.className = 'group-name-input';
+  input.value = currentName;
+  nameSpan.replaceWith(input);
+  input.focus();
+  input.select();
+
+  const commit = async () => {
+    const val = input.value.trim() || currentName;
+    const g = data.groups.find(g=>g.id===groupId);
+    if(g) g.name = val;
+    await saveData();
+    render();
+  };
+  input.addEventListener('keydown', (ev) => {
+    if(ev.key === 'Enter') input.blur();
+    if(ev.key === 'Escape'){ input.value = currentName; input.blur(); }
+  });
+  input.addEventListener('blur', commit);
+}
+
+function renderLog(){
+  const wrap = document.getElementById('logTableWrap');
+  const sorted = [...data.sessions].sort((a,b) => b.date.localeCompare(a.date));
+  if(sorted.length === 0){
+    wrap.innerHTML = '<div class="empty-log">No sessions logged yet — tap a chalk stamp above to start.</div>';
+    return;
+  }
+  const nameFor = (id) => (data.groups.find(g=>g.id===id)||{}).name || 'Unknown group';
+  let html = '<table><thead><tr><th>Date</th><th>Group</th><th>Note</th><th></th></tr></thead><tbody>';
+  sorted.forEach(s => {
+    html += '<tr data-id="'+s.id+'">'
+      + '<td class="date-cell">'
+      +   '<span class="date-display" data-role="date-display">'+fmtDate(s.date)+'</span>'
+      +   '<input type="date" class="date-edit-input" data-role="date-input" value="'+s.date+'" style="display:none;">'
+      +   '<button class="icon-btn date-edit-btn" data-action="edit-log-date" title="Edit this date">✎</button>'
+      + '</td>'
+      + '<td>'+escapeHtml(nameFor(s.groupId))+'</td>'
+      + '<td class="note-cell">'+escapeHtml(s.note || '—')+'</td>'
+      + '<td><button class="del-btn" data-action="del">Delete</button></td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('[data-action="del"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr');
+      const id = row.dataset.id;
+      if(!confirm('Delete this session entry?')) return;
+      data.sessions = data.sessions.filter(s => s.id !== id);
+      await saveData();
+      render();
+    });
+  });
+
+  wrap.querySelectorAll('[data-action="edit-log-date"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const cell = e.target.closest('td');
+      const row = e.target.closest('tr');
+      const sessionId = row.dataset.id;
+      const display = cell.querySelector('[data-role="date-display"]');
+      const input = cell.querySelector('[data-role="date-input"]');
+      display.style.display = 'none';
+      e.target.style.display = 'none';
+      input.style.display = 'inline-block';
+      input.focus();
+
+      const commit = async () => {
+        const newDate = input.value;
+        if(newDate){
+          const s = data.sessions.find(s => s.id === sessionId);
+          if(s) s.date = newDate;
+          await saveData();
+        }
+        render();
+      };
+      input.addEventListener('change', commit, { once:true });
+      input.addEventListener('blur', () => {
+        if(input.style.display !== 'none'){
+          display.style.display = '';
+          e.target.style.display = '';
+          input.style.display = 'none';
+        }
+      }, { once:true });
+    });
+  });
+}
+
+function populateModalGroupSelect(){
+  const sel = document.getElementById('modalGroup');
+  sel.innerHTML = data.groups.map(g => '<option value="'+g.id+'">'+escapeHtml(g.name)+'</option>').join('');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// Modal wiring
+const modalBackdrop = document.getElementById('modalBackdrop');
+document.getElementById('openModalBtn').addEventListener('click', () => {
+  document.getElementById('modalDate').value = todayStr();
+  document.getElementById('modalNote').value = '';
+  populateModalGroupSelect();
+  modalBackdrop.classList.add('open');
+});
+document.getElementById('addGroupBtn').addEventListener('click', onAddGroupClick);
+document.getElementById('cancelModalBtn').addEventListener('click', () => {
+  modalBackdrop.classList.remove('open');
+});
+modalBackdrop.addEventListener('click', (e) => {
+  if(e.target === modalBackdrop) modalBackdrop.classList.remove('open');
+});
+document.getElementById('saveModalBtn').addEventListener('click', async () => {
+  const groupId = document.getElementById('modalGroup').value;
+  const dateVal = document.getElementById('modalDate').value || todayStr();
+  const note = document.getElementById('modalNote').value.trim();
+  data.sessions.push({ id: 's'+Date.now()+Math.floor(Math.random()*1000), groupId, date: dateVal, note });
+  await saveData();
+  modalBackdrop.classList.remove('open');
+  render();
+  showToast('Session saved');
+});
+
+document.getElementById('toggleLogBtn').addEventListener('click', () => {
+  const sec = document.getElementById('logSection');
+  const btn = document.getElementById('toggleLogBtn');
+  const isOpen = sec.classList.contains('open');
+  sec.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? 'View full log' : 'Hide full log';
+});
+
+loadData();
+</script>
+</body>
+</html>
